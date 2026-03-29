@@ -1,1 +1,56 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<title>AI短剧全自动生成器</title>
+<style>
+body { background: #111; color: #fff; padding: 20px; font-family: system-ui; max-width: 700px; margin: 0 auto; }
+.card { background: #222; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+textarea { width: 100%; height: 140px; background: #333; color: #fff; border: none; border-radius: 8px; padding: 12px; font-size: 14px; }
+button { background: #0071e3; color: #fff; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+.result { background: #333; padding: 12px; border-radius: 8px; margin-top: 10px; white-space: pre-wrap; line-height: 1.6; min-height: 100px; }
+h3 { margin: 0 0 10px 0; }
+</style>
 
+<div class="card">
+  <textarea id="prompt">写一个50秒竖屏赘婿逆袭短剧，严格格式：镜头X [时长] | 画面 | 台词</textarea>
+  <br>
+  <button onclick="generateAll()">生成剧本 + 视频</button>
+</div>
+
+<div class="card">
+  <h3>生成的剧本</h3>
+  <div id="scriptResult" class="result">等待生成...</div>
+</div>
+
+<div class="card">
+  <h3>视频生成任务</h3>
+  <div id="videoResult" class="result">视频任务已提交，稍后可凭任务ID查询结果...</div>
+</div>
+
+<script>
+async function generateAll() {
+  const scriptRes = document.getElementById('scriptResult');
+  const videoRes = document.getElementById('videoResult');
+  scriptRes.textContent = '生成剧本中...';
+  videoRes.textContent = '提交视频任务中...';
+
+  try {
+    const resp = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: document.getElementById('prompt').value })
+    });
+    const data = await resp.json();
+
+    if (data.error) {
+      scriptRes.textContent = `错误：${data.error}`;
+      videoRes.textContent = data.message || data.tip;
+    } else {
+      scriptRes.textContent = data.script;
+      videoRes.textContent = JSON.stringify(data.video_task, null, 2);
+    }
+  } catch (e) {
+    scriptRes.textContent = `请求失败：${e.message}`;
+    videoRes.textContent = '请检查 Vercel 函数是否部署成功';
+  }
+}
+</script>
